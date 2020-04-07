@@ -30,9 +30,6 @@ double iterateJ(vector<vector<double>> &V, double V0) {
       double dV = fabs(Vnew - V[i][j]);
       dVmax = std::max(dVmax, dV);  // Keep track of max change in this sweep
       V[i][j] = Vnew;
-
-      if(j == 1)      V[i][j] =  V0;
-      if(j == ny - 1) V[i][j] = -V0;
     }
   }
   return dVmax;
@@ -51,9 +48,6 @@ double iterateGS(vector<vector<double>> &V, double V0) {
       double dV = fabs(Vnew - V[i][j]);
       dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
       V[i][j] = Vnew;
-
-      if(j == 1)      V[i][j] =  V0;
-      if(j == ny - 1) V[i][j] = -V0;
     }
   }
   return dVmax;
@@ -96,7 +90,7 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
   
   for(int i = 0; i < Npts; i++) {
     V[i][Npts - 1] = -V0;  // Set voltage at wires
-    V[i][1]        =  V0;
+    V[i][0]        =  V0;
   }
   
   
