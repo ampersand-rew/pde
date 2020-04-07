@@ -20,11 +20,11 @@ GSLFLAGS    = -I${EBROOTGSL}/include/gsl  -I/usr/include/gsl -lgsl -lgslcblas
 
 
 
-all: LaplaceLine
+all: p1
 
 
-LaplaceLine: LaplaceLine.C
-	g++ -g -Wall -oLaplaceLine LaplaceLine.C $(ROOTFLAGS) $(GSLFLAGS)
+p1: p1.C
+	g++ -g -Wall -o p1 p1.C $(ROOTFLAGS) $(GSLFLAGS)
 
 clean:
-	rm -f LaplaceLine *.o *.so *.pcm *.d *~
+	rm -f p1 *.o *.so *.pcm *.d *~
