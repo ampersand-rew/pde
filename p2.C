@@ -14,6 +14,14 @@ using std::vector;
 using std::cout;
 using std::endl;
 
+
+const double L  = 100; // Length of any side
+const double V0 = 100; // Voltage at top of box
+const double rho0 = 0.5;
+const double dist = 20; // Distance from plate to wall
+const int maxgraphlines = 200; // Max lines to draw in each direction
+
+
 // Generic code to do one iteration of finite difference method
 // Jacobi Method
 double iterateJ(vector<vector<double>> &V, vector<vector<double>> &rho,
@@ -54,6 +62,7 @@ double iterateGS(vector<vector<double>> &V, vector<vector<double>> &rho,
   return dVmax;
 }
 
+
 // Fill a TGraph2D object from a vector of voltages
 // delta: grid spacing
 // The optional range parameter defines the subregion to plot
@@ -72,6 +81,7 @@ void fillGraph(TGraph2D* tg, const vector<vector<double>> &V, double delta,
   }
 }
 
+
 // Define box 0 < x < L, 0 < y < L
 // Potential on top edge at y = L
 // eps: convergence criteria (max size of change at any grid point in an iteration)
@@ -80,11 +90,6 @@ void fillGraph(TGraph2D* tg, const vector<vector<double>> &V, double delta,
 // pass a tcanvas for an animated solution, with specified max rate of frames/second
 TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
 		      TCanvas *tc = 0, int rate = 10) {
-  double L  = 100;  // Length of any side
-  double V0 = 100;  // Voltage at top of box
-  double rho0 = 2.1;
-  int maxgraphlines = 200;  // Max lines to draw in each direction
-
    // create N x N vector, init to 
   vector<vector<double>> V(Npts, vector<double> (Npts, 0));
   vector<vector<double>> rho(Npts, vector<double> (Npts, 0));
@@ -92,8 +97,8 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
 
   
   for(int i = 0; i < Npts; i++) {
-    rho[i][Npts - 2] = -rho0;  // Set voltage at wires
-    rho[i][1]        =  rho0;
+    rho[i][Npts - 1 - dist] = -rho0;  // Set voltage at wires
+    rho[i][dist]            =  rho0;
   }
   
   

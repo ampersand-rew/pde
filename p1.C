@@ -16,6 +16,11 @@ using std::vector;
 using std::cout;
 using std::endl;
 
+const double L = 100;   // Length of any side
+const double V0 = 100;  // Voltage at top of box
+const double dist = 20; // distance from plate to wall, should be < Npts / 2 for best results 
+const int maxgraphlines = 200;  // Max lines to draw in each direction
+
 // Generic code to do one iteration of finite difference method
 // Jacobi Method
 double iterateJ(vector<vector<double>> &V) {
@@ -43,11 +48,13 @@ double iterateGS(vector<vector<double>> &V) {
   int ny = V[0].size();
   for(int i = 1; i < nx - 1; i++) {
     for(int j = 1; j < ny - 1; j++) {
-      double Vnew = 0.25 * (V[i + 1][j] + V[i - 1][j] +
-			    V[i][j + 1] + V[i][j - 1]);
-      double dV = fabs(Vnew - V[i][j]);
-      dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
-      V[i][j] = Vnew;
+      if(j != dist && j != ny - 1 - dist) {  // Preserve potential at plate
+	double Vnew = 0.25 * (V[i + 1][j] + V[i - 1][j] +
+			      V[i][j + 1] + V[i][j - 1]);
+	double dV = fabs(Vnew - V[i][j]);
+	dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
+	V[i][j] = Vnew;
+      }
     }
   }
   return dVmax;
@@ -79,18 +86,14 @@ void fillGraph(TGraph2D* tg, const vector<vector<double>> &V, double delta,
 // pass a tcanvas for an animated solution, with specified max rate of frames/second
 TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
 		      TCanvas *tc = 0, int rate = 10) {
-  double L  = 100;  // Length of any side
-  double V0 = 100;  // Voltage at top of box
-  int maxgraphlines = 200;  // Max lines to draw in each direction
-
    // create N x N vector, init to 
   vector<vector<double>> V(Npts, vector<double> (Npts, 0));
   double delta = L / (Npts - 1);  // Grid spacing
 
   
   for(int i = 0; i < Npts; i++) {
-    V[i][Npts - 1] = -V0;  // Set voltage at wires
-    V[i][0]        =  V0;
+    V[i][Npts - 1 - dist] = -V0;  // Set voltage at plates
+    V[i][dist]        =  V0;
   }
   
   
@@ -110,7 +113,7 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
   
   do {
     //dV = iterateJ(V);   // iterate using Jacobi method
-    dV=iterateGS(V);   // iterate using Gauss-Seidel method
+    dV = iterateGS(V);   // iterate using Gauss-Seidel method
     ++niter;
     if (tc) {
       tc->cd();
