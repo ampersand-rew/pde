@@ -17,7 +17,7 @@ using std::endl;
 
 const double L  = 100; // Length of any side
 const double V0 = 100; // Voltage at top of box
-const double rho0 = 0.5;
+const double rho0 = 2;
 const double dist = 20; // Distance from plate to wall
 const int maxgraphlines = 200; // Max lines to draw in each direction
 
@@ -53,7 +53,7 @@ double iterateGS(vector<vector<double>> &V, vector<vector<double>> &rho,
     for(int j = 1; j < ny - 1; j++) {
       double Vnew = 0.25 * (V[i + 1][j] + V[i - 1][j]
 			    + V[i][j + 1] + V[i][j - 1])
-	+ 4 * TMath::Pi() * rho[i][j] * delta * delta; 
+	+ TMath::Pi() * rho[i][j] * delta * delta; 
       double dV = fabs(Vnew - V[i][j]);
       dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
       V[i][j] = Vnew;
