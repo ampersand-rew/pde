@@ -34,5 +34,17 @@ p4: p4.C
 p6: p6.C
 	g++ -g -Wall -o p6 p6.C $(ROOTFLAGS) $(GSLFLAGS)
 
+p2: p2.C
+	g++ -g -Wall -o p2 p2.C $(ROOTFLAGS) $(GSLFLAGS)
+
+p3: p3.C
+	g++ -g -Wall -o p3 p3.C $(ROOTFLAGS) $(GSLFLAGS)
+
+p4: p4.C
+	g++ -g -Wall -o p4 p4.C $(ROOTFLAGS) $(GSLFLAGS)
+
+p6: p6.C
+	g++ -g -Wall -o p6 p6.C $(ROOTFLAGS) $(GSLFLAGS)
+
 clean:
 	rm -f p1 p2 p3 p4 p6 *.o *.so *.pcm *.d *~
