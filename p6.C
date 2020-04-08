@@ -15,12 +15,12 @@ using std::cout;
 using std::endl;
 
 
-const double L  = 100; // Length of any side
-const double V0 = 100; // Voltage at top of box
-const double rho0 = 2;
-const double dist = 0; // Distance from plate to wall
+const double L  = 100; // Radius of grounded container
+const double V0 = 100; // Voltage of outer cylinder
 const int maxgraphlines = 200; // Max lines to draw in each direction
-const double w = L / 2.0;
+const int a = 40;
+const int b = 70;
+const int crack_size = 3;
 
 
 // Generic code to do one iteration of finite difference method
@@ -52,12 +52,17 @@ double iterateGS(vector<vector<double>> &V, vector<vector<double>> &rho,
   int ny = V[0].size();
   for(int i = 1; i < nx - 1; i++) {
     for(int j = 1; j < ny - 1; j++) {
-      double Vnew = 0.25 * (V[i + 1][j] + V[i - 1][j]
-			    + V[i][j + 1] + V[i][j - 1])
-	+ TMath::Pi() * rho[i][j] * delta * delta; 
-      double dV = fabs(Vnew - V[i][j]);
-      dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
-      V[i][j] = Vnew;
+      if((i != a && i != b) ||
+	 (j >= ny / 2 - crack_size && j <= ny / 2 + crack_size)) {
+	double Vnew = 0.5 * (V[i + 1][j] * (1 + 1 / (2 * i)) / (delta * delta) +
+			     V[i - 1][j] * (1 - 1 / (2 * i)) / (delta * delta) +
+			     (V[i][j + 1] + V[i][j - 1])
+			     / (i * i * pow(delta, 4))) * delta * delta /
+	  (1 + 1 / (i * i * delta * delta));
+	double dV = fabs(Vnew - V[i][j]);
+	dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
+	V[i][j] = Vnew;
+      }
     }
   }
   return dVmax;
@@ -75,9 +80,10 @@ void fillGraph(TGraph2D* tg, const vector<vector<double>> &V, double delta,
   for(int i = 0; i < nx; i++) {
     double x = i * delta;
     for(int j = 0; j < ny; j++) {
-      double y = j * delta;
-      if(range && range->IsInside(x, y))
-	tg->SetPoint(tg->GetN(), x, y, V[i][j]);
+      double y = j * delta * 2 * TMath::Pi() / ny;
+      if(range && range->IsInside(x, y)) {
+	tg->SetPoint(tg->GetN(), x * TMath::Cos(y), x * TMath::Sin(y), V[i][j]);
+      }
     }
   }
 }
@@ -95,21 +101,16 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
   vector<vector<double>> V(Npts, vector<double> (Npts, 0));
   vector<vector<double>> rho(Npts, vector<double> (Npts, 0));
   double delta = L / (Npts - 1);  // Grid spacing
-
   
   for(int i = 0; i < Npts; i++) {
-    /*
-    if(i <= w) {
-      V[i][0] = 2 * V0 * i / w;
-    } else {
-      V[i][0] = V0 * (1 - i / w);
-    }
-    */
-    V[i][0] = V0 * TMath::Sin(2 * TMath::Pi() * i / w);
-    
-    V[i][Npts - 1] = V[i][0];
-    V[0][i]        = V[i][0];
-    V[Npts - 1][i] = V[i][0];
+    V[a][i] = -V0; // Inner cylinder
+    V[b][i] =  V0; // Outer cylinder
+    V[Npts - 1][i] = 0; // Grounded container
+  }
+
+  for(int j = Npts / 2 - crack_size; j < Npts / 2 + crack_size; j++) {
+    V[a][j] = 0;
+    V[b][j] = 0;
   }
   
 
@@ -141,7 +142,11 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
   
 
   cout << "Ended calculation with " << niter << " iterations, dVmax = " << dV << endl;
-
+  for(int i = 0; i < Npts; i++) {
+    V[i][Npts - 1] = V[i][Npts - 2]; // Hacky way to associate 0 and 2pi in V
+    V[i][0] = V[i][1];
+  }
+  
   fillGraph(tgV, V, delta, plotRange);
   tgV->Draw("surf");
   //tc->Update();
