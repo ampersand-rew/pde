@@ -15,7 +15,7 @@ using std::cout;
 using std::endl;
 
 
-const double L  = 100; // Radius of grounded container
+const int L  = 200; // Radius of grounded container
 const double V0 = 100; // Voltage of outer cylinder
 const int maxgraphlines = 200; // Max lines to draw in each direction
 const int a = 40;
@@ -100,14 +100,14 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
    // create N x N vector, init to 
   vector<vector<double>> V(Npts, vector<double> (Npts, 0));
   vector<vector<double>> rho(Npts, vector<double> (Npts, 0));
-  double delta = L / (Npts - 1);  // Grid spacing
+  double delta =1;  // Grid spacing
   
   for(int i = 0; i < Npts; i++) {
     V[a][i] = -V0; // Inner cylinder
     V[b][i] =  V0; // Outer cylinder
     V[Npts - 1][i] = 0; // Grounded container
   }
-
+  
   for(int j = Npts / 2 - crack_size; j < Npts / 2 + crack_size; j++) {
     V[a][j] = 0;
     V[b][j] = 0;
@@ -117,8 +117,7 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
   int msec = 1000 / rate;   // Milliseconds sleep between frames
   TBox *plotRange = new TBox(0, 0, 1.1 * L, 1.1 * L);
 
-  TGraph2D* tgV = new TGraph2D();  // Graph to store result
-  if(Npts < 50) tgV->SetLineWidth(3);                         
+  TGraph2D* tgV = new TGraph2D();  // Graph to store result                      
   tgV->SetLineColor(kRed);
   tgV->SetNpx(std::min(maxgraphlines, Npts));
   tgV->SetNpy(std::min(maxgraphlines, Npts)); 
@@ -174,7 +173,7 @@ int main(int argc, char *argv[]) {
   // Defaults for LaplaceLine
   int maxIter = 100;
   double eps  = 0.001;
-  int Npts    = 100;
+  int Npts    = 200;
   TCanvas *tc = 0;
   int rate    = 10;
   
@@ -206,8 +205,18 @@ int main(int argc, char *argv[]) {
 
   // Display final result
   if(!tc) tc = new TCanvas();
+  TCanvas *tc2 = new TCanvas();
+  TCanvas *tc3 = new TCanvas();
+  tc->cd();
   tg->Draw("surf");  // explore other drawing options!
-  
+  tc2->cd();
+  tg->Draw("CONT");
+  tc3->cd();
+  TGraph2D *tg2 = ((TGraph2D*)tg->Clone());
+  tg2->SetNpx(100);
+  tg2->SetNpy(100);
+  tg2->Draw("ARR COLZ");
+
   cout << "Press ^c to exit" << endl;
   theApp.SetIdleTimer(30, ".q");
   // set up a failsafe timer to end the program  
