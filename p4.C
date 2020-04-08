@@ -18,7 +18,7 @@ using std::endl;
 const double L  = 100; // Length of any side
 const double V0 = 100; // Voltage at top of box
 const double rho0 = 2;
-const double dist = 20; // Distance from plate to wall
+const double dist = 0; // Distance from plate to wall
 const int maxgraphlines = 200; // Max lines to draw in each direction
 const double w = L / 2.0;
 
@@ -52,14 +52,12 @@ double iterateGS(vector<vector<double>> &V, vector<vector<double>> &rho,
   int ny = V[0].size();
   for(int i = 1; i < nx - 1; i++) {
     for(int j = 1; j < ny - 1; j++) {
-      if(j != ny - 1 - dist && j != dist) {
-	double Vnew = 0.25 * (V[i + 1][j] + V[i - 1][j]
-			      + V[i][j + 1] + V[i][j - 1])
-	  + TMath::Pi() * rho[i][j] * delta * delta; 
-	double dV = fabs(Vnew - V[i][j]);
-	dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
-	V[i][j] = Vnew;
-      }
+      double Vnew = 0.25 * (V[i + 1][j] + V[i - 1][j]
+			    + V[i][j + 1] + V[i][j - 1])
+	+ TMath::Pi() * rho[i][j] * delta * delta; 
+      double dV = fabs(Vnew - V[i][j]);
+      dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
+      V[i][j] = Vnew;
     }
   }
   return dVmax;
@@ -102,15 +100,16 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
   for(int i = 0; i < Npts; i++) {
     /*
     if(i <= w) {
-      V[i][Npts - 1 - dist] =  2 * V0 * i / w;
-      V[i][dist]            = -2 * V0 * i / w;
+      V[i][0] = 2 * V0 * i / w;
     } else {
-      V[i][Npts - 1 - dist] =  V0 * (1 - i / w);
-      V[i][dist]            = -V0 * (1 - i / w);
+      V[i][0] = V0 * (1 - i / w);
     }
     */
-    V[i][Npts - 1 - dist] =  V0 * TMath::Sin(2 * TMath::Pi() * i / w);
-    V[i][dist]            = -V0 * TMath::Sin(2 * TMath::Pi() * i / w);
+    V[i][0] = V0 * TMath::Sin(2 * TMath::Pi() * i / w);
+    
+    V[i][Npts - 1] = V[i][0];
+    V[0][i]        = V[i][0];
+    V[Npts - 1][i] = V[i][0];
   }
   
 
