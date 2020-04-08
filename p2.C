@@ -82,7 +82,7 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
 		      TCanvas *tc = 0, int rate = 10) {
   double L  = 100;  // Length of any side
   double V0 = 100;  // Voltage at top of box
-  double rho0 = 1;
+  double rho0 = 2.1;
   int maxgraphlines = 200;  // Max lines to draw in each direction
 
    // create N x N vector, init to 
