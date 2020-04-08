@@ -15,12 +15,10 @@ using std::cout;
 using std::endl;
 
 
-const double L  = 100; // Length of any side
+const int L  = 100; // Length of any side
 const double V0 = 100; // Voltage at top of box
-const double rho0 = 2;
 const double dist = 0; // Distance from plate to wall
 const int maxgraphlines = 200; // Max lines to draw in each direction
-const double w = L / 2.0;
 
 
 // Generic code to do one iteration of finite difference method
@@ -45,16 +43,14 @@ double iterateJ(vector<vector<double>> &V, vector<vector<double>> &rho,
 
 
 // Gauss-Seidel Method
-double iterateGS(vector<vector<double>> &V, vector<vector<double>> &rho,
-		 double delta) {
+double iterateGS(vector<vector<double>> &V, double delta) {
   double dVmax = 1e-50;
   int nx = V.size();
   int ny = V[0].size();
   for(int i = 1; i < nx - 1; i++) {
     for(int j = 1; j < ny - 1; j++) {
       double Vnew = 0.25 * (V[i + 1][j] + V[i - 1][j]
-			    + V[i][j + 1] + V[i][j - 1])
-	+ TMath::Pi() * rho[i][j] * delta * delta; 
+			    + V[i][j + 1] + V[i][j - 1]);
       double dV = fabs(Vnew - V[i][j]);
       dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
       V[i][j] = Vnew;
@@ -93,7 +89,6 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
 		      TCanvas *tc = 0, int rate = 10) {
    // create N x N vector, init to 
   vector<vector<double>> V(Npts, vector<double> (Npts, 0));
-  vector<vector<double>> rho(Npts, vector<double> (Npts, 0));
   double delta = L / (Npts - 1);  // Grid spacing
 
   
@@ -105,11 +100,8 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
       V[i][0] = V0 * (1 - i / w);
     }
     */
-    V[i][0] = V0 * TMath::Sin(2 * TMath::Pi() * i / w);
-    
-    V[i][Npts - 1] = V[i][0];
-    V[0][i]        = V[i][0];
-    V[Npts - 1][i] = V[i][0];
+    V[i][0] = V0 * TMath::Sin(2 * TMath::Pi() * i / L);
+
   }
   
 
@@ -117,7 +109,6 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
   TBox *plotRange = new TBox(0, 0, 1.1 * L, 1.1 * L);
 
   TGraph2D* tgV = new TGraph2D();  // Graph to store result
-  if(Npts < 50) tgV->SetLineWidth(3);                         
   tgV->SetLineColor(kRed);
   tgV->SetNpx(std::min(maxgraphlines, Npts));
   tgV->SetNpy(std::min(maxgraphlines, Npts)); 
@@ -128,7 +119,65 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
   
   do {
     //dV = iterateJ(V);   // iterate using Jacobi method
-    dV=iterateGS(V, rho, delta);   // iterate using Gauss-Seidel method
+    dV=iterateGS(V, delta);   // iterate using Gauss-Seidel method
+    ++niter;
+    if (tc) {
+      tc->cd();
+      fillGraph(tgV, V, delta, plotRange);
+      //tgV->Draw("surf");
+      //tc->Update();
+      //gSystem->Sleep(msec);
+    }
+  } while(dV > eps && niter < maxIter);
+  
+
+  cout << "Ended calculation with " << niter << " iterations, dVmax = " << dV << endl;
+
+  fillGraph(tgV, V, delta, plotRange);
+  tgV->Draw("surf");
+  //tc->Update();
+  return tgV;
+}
+
+TGraph2D* LaplaceLine2(int maxIter = 100, double eps = 0.001, int Npts = 100,
+		      TCanvas *tc = 0, int rate = 10) {
+   // create N x N vector, init to 
+  vector<vector<double>> V(Npts, vector<double> (Npts, 0));
+  double delta = L / (Npts - 1);  // Grid spacing
+
+  
+  for(int i = 0; i < Npts; i++) {
+    /*
+    if(i <= w) {
+      V[i][0] = 2 * V0 * i / w;
+    } else {
+      V[i][0] = V0 * (1 - i / w);
+    }
+    */
+    if(i < L/2)
+      {
+	V[i][0] = V0*(double)i/((double)L);
+      } else
+      {
+	V[i][0] = V0*(1-(double)i/((double)L));
+      }
+  }
+  
+  int msec = 1000 / rate;   // Milliseconds sleep between frames
+  TBox *plotRange = new TBox(0, 0, 1.1 * L, 1.1 * L);
+
+  TGraph2D* tgV = new TGraph2D();  // Graph to store result
+  tgV->SetLineColor(kRed);
+  tgV->SetNpx(std::min(maxgraphlines, Npts));
+  tgV->SetNpy(std::min(maxgraphlines, Npts)); 
+  tgV->SetTitle("Voltage;x;y;V");
+  
+  double dV;
+  int niter = 0;
+  
+  do {
+    //dV = iterateJ(V);   // iterate using Jacobi method
+    dV=iterateGS(V, delta);   // iterate using Gauss-Seidel method
     ++niter;
     if (tc) {
       tc->cd();
@@ -198,11 +247,15 @@ int main(int argc, char *argv[]) {
   }
  
   auto tg = LaplaceLine(maxIter, eps, Npts, tc, rate);
+  auto tg2 = LaplaceLine2(maxIter, eps, Npts, tc, rate);
 
   // Display final result
   if(!tc) tc = new TCanvas();
+  tc->Divide(2,1);
+  tc->cd(1);
   tg->Draw("surf");  // explore other drawing options!
-  
+  tc->cd(2);
+  tg2->Draw("surf");
   cout << "Press ^c to exit" << endl;
   theApp.SetIdleTimer(30, ".q");
   // set up a failsafe timer to end the program  
