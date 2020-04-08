@@ -15,10 +15,10 @@ using std::cout;
 using std::endl;
 
 
-const double L  = 100; // Length of any side
+const int L  = 100; // Length of any side
 const double V0 = 100; // Voltage at top of box
 const double rho0 = 2;
-const double dist = 20; // Distance from plate to wall
+const int dist = 45; // Distance from plate to wall
 const int maxgraphlines = 200; // Max lines to draw in each direction
 
 
@@ -53,7 +53,7 @@ double iterateGS(vector<vector<double>> &V, vector<vector<double>> &rho,
     for(int j = 1; j < ny - 1; j++) {
       double Vnew = 0.25 * (V[i + 1][j] + V[i - 1][j]
 			    + V[i][j + 1] + V[i][j - 1])
-	+ TMath::Pi() * rho[i][j] * delta * delta; 
+	+ TMath::Pi() * rho[i][j] * delta * delta; //use epsilon_0 = 1 convention
       double dV = fabs(Vnew - V[i][j]);
       dVmax=std::max(dVmax, dV);  // Keep track of max change in this sweep
       V[i][j] = Vnew;
@@ -91,13 +91,13 @@ void fillGraph(TGraph2D* tg, const vector<vector<double>> &V, double delta,
 TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
 		      TCanvas *tc = 0, int rate = 10) {
    // create N x N vector, init to 
-  vector<vector<double>> V(Npts, vector<double> (Npts, 0));
-  vector<vector<double>> rho(Npts, vector<double> (Npts, 0));
-  double delta = L / (Npts - 1);  // Grid spacing
+  vector<vector<double>> V(L, vector<double> (L, 0));
+  vector<vector<double>> rho(L, vector<double> (L, 0));
+  double delta = 1;  // Grid spacing
 
   
-  for(int i = 0; i < Npts; i++) {
-    rho[i][Npts - 1 - dist] = -rho0;  // Set voltage at wires
+  for(int i = L/2-Npts/2; i < L/2+Npts/2; i++) {
+    rho[i][L - 1 - dist] = -rho0;  // Set voltage at wires
     rho[i][dist]            =  rho0;
   }
   
@@ -106,11 +106,10 @@ TGraph2D* LaplaceLine(int maxIter = 100, double eps = 0.001, int Npts = 100,
   int msec = 1000 / rate;   // Milliseconds sleep between frames
   TBox *plotRange = new TBox(0, 0, 1.1 * L, 1.1 * L);
 
-  TGraph2D* tgV = new TGraph2D();  // Graph to store result
-  if(Npts < 50) tgV->SetLineWidth(3);                         
+  TGraph2D* tgV = new TGraph2D();  // Graph to store result                        
   tgV->SetLineColor(kRed);
-  tgV->SetNpx(std::min(maxgraphlines, Npts));
-  tgV->SetNpy(std::min(maxgraphlines, Npts)); 
+  tgV->SetNpx(std::min(maxgraphlines, L));
+  tgV->SetNpy(std::min(maxgraphlines, L)); 
   tgV->SetTitle("Voltage;x;y;V");
   
   double dV;
@@ -159,7 +158,7 @@ int main(int argc, char *argv[]) {
   // Defaults for LaplaceLine
   int maxIter = 100;
   double eps  = 0.001;
-  int Npts    = 100;
+  int Npts    = 20;
   TCanvas *tc = 0;
   int rate    = 10;
   
